@@ -68,10 +68,10 @@ const Navbar = () => {
                 </button>
 
                 <Link to="/profile">
-                    <div className="w-[52px] h-[52px] rounded-full glass-effect flex justify-center items-center cursor-pointer hover-lift group">
-                        <div className="w-[36px] h-[36px] rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex justify-center items-center p-[2px] group-hover:shadow-[0_0_20px_rgba(102,126,234,0.5)] transition-all duration-300">
+                    <div className="w-[44px] h-[44px] rounded-full glass-effect flex justify-center items-center cursor-pointer hover-lift group">
+                        <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex justify-center items-center p-[2px] group-hover:shadow-[0_0_20px_rgba(102,126,234,0.5)] transition-all duration-300">
                             <div className="w-full h-full rounded-full bg-[#13131a] flex items-center justify-center">
-                                <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="user" className="w-[60%] h-[60%] object-contain" />
+                                <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="user" className="w-[52%] h-[52%] object-contain" />
                             </div>
                         </div>
                     </div>
