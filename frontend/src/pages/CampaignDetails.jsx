@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ethers } from 'ethers';
 
 import { useStateContext } from '../context/CrowdFundingContext';
 import { CustomButton, Loader } from '../components';
@@ -8,49 +7,58 @@ import { CustomButton, Loader } from '../components';
 const CampaignDetails = () => {
     const { state } = useLocation();
     const navigate = useNavigate();
-    const { donate, getDonations, contract, address } = useStateContext();
+    const { donate, getDonations, address } = useStateContext();
 
     const [isLoading, setIsLoading] = useState(false);
     const [amount, setAmount] = useState('');
     const [donators, setDonators] = useState([]);
+    const [error, setError] = useState('');
+
+    if (!state) {
+        return (
+            <div className="text-white">
+                <p className="mb-4">Campaign details are unavailable.</p>
+                <CustomButton btnType="button" title="Back to Home" handleClick={() => navigate('/')} />
+            </div>
+        );
+    }
 
     const remainingDays = (state.deadline - Date.now()) / (1000 * 60 * 60 * 24);
+    const targetAmount = Number(state.target) || 0;
+    const collectedAmount = Number(state.amountCollected) || 0;
+    const fundedPercent = targetAmount > 0 ? Math.min(100, (collectedAmount / targetAmount) * 100) : 0;
 
-    // We need to implement getDonators in context or here
-    // In context we didn't implement getDonators yet!
-    // I will add it to the component directly or context if needed.
-    // But contract is available in context.
-
-    // Fetch donators
-    const fetchDonators = async () => {
-        // We can call contract directly if context exposes it, or use context method
-        // In context we have 'contract' object.
-        const donatorsData = await contract.getDonators(state.pId);
-
-        // donatorsData is [addresses[], amounts[]]
-        const numberOfDonations = donatorsData[0].length;
-        const parsedDonations = [];
-
-        for (let i = 0; i < numberOfDonations; i++) {
-            parsedDonations.push({
-                donator: donatorsData[0][i],
-                donation: ethers.formatEther(donatorsData[1][i].toString())
-            })
+    const fetchDonators = useCallback(async () => {
+        try {
+            const parsedDonations = await getDonations(state.pId);
+            setDonators(parsedDonations);
+        } catch (fetchError) {
+            console.log('Failed to fetch donators', fetchError);
         }
-
-        setDonators(parsedDonations);
-    }
+    }, [getDonations, state.pId]);
 
     useEffect(() => {
-        if (contract) fetchDonators();
-    }, [contract, address])
+        fetchDonators();
+    }, [address, fetchDonators]);
 
     const handleDonate = async () => {
-        setIsLoading(true);
-        await donate(state.pId, amount);
-        navigate('/')
-        setIsLoading(false);
-    }
+        if (!amount || Number(amount) <= 0) {
+            setError('Enter a valid donation amount.');
+            return;
+        }
+        try {
+            setError('');
+            setIsLoading(true);
+            await donate(state.pId, amount);
+            await fetchDonators();
+            navigate('/');
+        } catch (donationError) {
+            setError('Donation failed. Please try again.');
+            console.log(donationError);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="animate-fadeIn">
@@ -72,12 +80,12 @@ const CampaignDetails = () => {
                     <div className="relative w-full h-[8px] bg-[#1a1a24] rounded-full mt-4 overflow-hidden">
                         <div
                             className="absolute h-full bg-gradient-to-r from-[#43e97b] to-[#38f9d7] rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(67,233,123,0.6)]"
-                            style={{ width: `${Math.min(100, (state.amountCollected / state.target) * 100)}%`, maxWidth: '100%' }}
+                            style={{ width: `${fundedPercent}%`, maxWidth: '100%' }}
                         >
                         </div>
                     </div>
                     <p className="mt-2 font-inter text-[13px] text-[#b2b3bd]">
-                        {Math.min(100, (state.amountCollected / state.target) * 100).toFixed(1)}% funded
+                        {fundedPercent.toFixed(1)}% funded
                     </p>
                 </div>
 
@@ -226,6 +234,9 @@ const CampaignDetails = () => {
                                 styles="w-full"
                                 handleClick={handleDonate}
                             />
+                            {error && (
+                                <p className="font-inter text-[13px] text-[#ff6b6b]">{error}</p>
+                            )}
                         </div>
                     </div>
                 </div>

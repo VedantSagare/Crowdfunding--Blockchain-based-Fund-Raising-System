@@ -2,7 +2,9 @@ import React from 'react';
 
 const FundCard = ({ owner, title, description, target, deadline, amountCollected, image, handleClick }) => {
     const remainingDays = (deadline - Date.now()) / (1000 * 60 * 60 * 24);
-    const progressPercentage = Math.min(100, (amountCollected / target) * 100);
+    const targetAmount = Number(target) || 0;
+    const collectedAmount = Number(amountCollected) || 0;
+    const progressPercentage = targetAmount > 0 ? Math.min(100, (collectedAmount / targetAmount) * 100) : 0;
 
     return (
         <div

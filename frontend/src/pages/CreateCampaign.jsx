@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom';
-import { ethers } from 'ethers';
 
 import { useStateContext } from '../context/CrowdFundingContext';
 import { CustomButton, FormField, Loader } from '../components';
@@ -8,6 +7,7 @@ import { CustomButton, FormField, Loader } from '../components';
 const CreateCampaign = () => {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
     const { createCampaign } = useStateContext();
     const [form, setForm] = useState({
         name: '',
@@ -25,18 +25,30 @@ const CreateCampaign = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Basic validation
-        // checkIfImage(form.image, async (exists) => {
-        //   if(exists) {
-        setIsLoading(true)
-        await createCampaign({ ...form, target: form.target })
-        setIsLoading(false);
-        navigate('/');
-        //   } else {
-        //     alert('Provide valid image URL')
-        //     setForm({ ...form, image: '' });
-        //   }
-        // })
+        if (!form.title.trim() || !form.description.trim() || !form.target || !form.deadline || !form.image.trim()) {
+            setError('Please fill all required fields.');
+            return;
+        }
+        if (Number(form.target) <= 0) {
+            setError('Goal must be greater than 0.');
+            return;
+        }
+        if (new Date(form.deadline).getTime() <= Date.now()) {
+            setError('End date must be in the future.');
+            return;
+        }
+
+        try {
+            setError('');
+            setIsLoading(true);
+            await createCampaign({ ...form, target: form.target });
+            navigate('/');
+        } catch (submitError) {
+            setError('Failed to create campaign. Please try again.');
+            console.log(submitError);
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -109,6 +121,9 @@ const CreateCampaign = () => {
                         styles="bg-[#1dc071]"
                     />
                 </div>
+                {error && (
+                    <p className="font-inter text-[13px] text-[#ff6b6b] text-center">{error}</p>
+                )}
             </form>
         </div>
     )
